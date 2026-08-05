@@ -149,6 +149,26 @@
   .boleto-frame img{width:100%; display:block; position:relative;}
   .a4 .empty{color:var(--gray); font-size:13px; text-align:center; padding:40px 0;}
 
+  /* ===== AJUSTES V2 ===== */
+  .tarja{background:rgba(232,132,60,.97);}
+  .tarja b{color:var(--navy);}
+  .tarja span{color:var(--navy2); font-weight:600;}
+  .g3hl{display:flex; gap:8px; margin-top:10px;}
+  .g3hl > div{flex:1; background:var(--cream); border:1px solid #E4DFD4; padding:11px 12px 12px; text-align:center;}
+  .g3hl b{display:block; font-size:9.5px; text-transform:uppercase; letter-spacing:.13em; color:var(--gray); font-weight:600; margin-bottom:4px;}
+  .g3hl .num{font-family:'Barlow Semi Condensed'; font-weight:700; font-size:27px; color:var(--navy); font-variant-numeric:tabular-nums; line-height:1;}
+  .g3hl .num.gold{color:var(--gold);}
+  .g3hl .num.org{color:var(--orange);}
+  .demtab{margin-top:10px; border-top:1px solid #E4DFD4;}
+  .demtab tr.sub td{font-family:'Barlow Semi Condensed'; font-weight:700; font-size:13px; background:#FBF9F4; border-top:1px solid #E4DFD4;}
+  .g3total{display:flex; align-items:center; gap:16px; background:var(--navy); color:var(--cream); padding:10px 16px; font-family:'Barlow Semi Condensed'; font-weight:700;}
+  .g3total .tlbl{font-size:15px; letter-spacing:.06em;}
+  .g3total .venc{margin-left:auto; font-size:11px; font-weight:500; color:#c8cbd4; font-family:'Barlow';}
+  .g3total .val{font-size:21px; color:var(--orange); font-variant-numeric:tabular-nums;}
+  .boleto-box{border:1.5px solid var(--navy); background:#fff; padding:8px 10px 10px; margin-top:12px;}
+  .boleto-box .boleto-lbl{color:var(--navy); margin:0 0 6px;}
+  .boleto-box .linhadig{font-size:15px; letter-spacing:.04em;}
+
   /* ===== IMPRESSÃO ===== */
   @media print{
     @page{size:A4; margin:0;}
@@ -221,7 +241,7 @@
       </div>
       <div class="grid2">
         <div class="field"><label>Energia compensada (kWh)</label><input id="fKwh" type="number" step="1" placeholder="0"></div>
-        <div class="field"><label>Tarifa (R$/kWh)</label><input id="fTarifa" type="number" step="0.01" value="1.19"></div>
+        <div class="field"><label>Tarifa (R$/kWh)</label><input id="fTarifa" type="number" step="0.000001" placeholder="ex.: 1.185396"><div class="hint" id="tarifaWarn" style="display:none; margin-top:4px">Esta fatura não tem consumo não compensado — informe a tarifa manualmente.</div></div>
       </div>
       <div class="grid2">
         <div class="field"><label>Desconto (%)</label><input id="fDesc" type="number" step="1" value="20"></div>
@@ -266,6 +286,8 @@
           <button id="bolPrev">← Pág. anterior</button>
           <button id="bolNext">Próx. página →</button>
         </div>
+        <button class="btn btn-navy" id="btnAutoBol" style="margin-top:10px">Ajustar automaticamente</button>
+        <div class="hint" style="margin-top:6px">Posiciona a visualização na ficha de compensação do boleto Sicoob padrão. Refine com os cortes em "Ajustes finos".</div>
         <div class="field" style="margin-top:12px"><label>Linha digitável (opcional)</label><input id="fLinha" placeholder="00000.00000 00000.000000 ..."></div>
       </div>
 
@@ -318,21 +340,28 @@
             <div><b>Fatura nº</b><span id="pNum">—</span></div>
             <div><b>Vencimento</b><span id="pVenc">—</span></div>
           </div>
+          <div class="g3hl">
+            <div><b>Consumo compensado</b><span class="num" id="hKwh">— kWh</span></div>
+            <div><b>Sua economia</b><span class="num gold" id="hEcon">R$ 0,00</span></div>
+            <div><b>Total a pagar</b><span class="num org" id="hTot">R$ 0,00</span></div>
+          </div>
           <table class="demtab">
             <tr class="dim"><td>Energia compensada no período (SCEE)</td><td id="pKwh">— kWh</td></tr>
             <tr class="dim"><td>Tarifa de referência (R$/kWh)</td><td id="pTarifa">—</td></tr>
             <tr><td>Energia — valor integral</td><td id="pBruto">R$ 0,00</td></tr>
             <tr class="desc"><td>Desconto G3 Solar (<span id="pDescPct">20</span>% sobre o kWh compensado)</td><td id="pDescV">− R$ 0,00</td></tr>
-            <tr><td>Energia G3 Solar com desconto</td><td id="pG3">R$ 0,00</td></tr>
-            <tr><td>Fatura Equatorial (tarifa mínima, encargos e consumo não compensado — quitada pela G3)</td><td id="pEq">R$ 0,00</td></tr>
-            <tr class="tot"><td>TOTAL A PAGAR</td><td id="pTotal">R$ 0,00</td></tr>
+            <tr class="sub"><td>Parcela 1 · Energia G3 Solar</td><td id="pG3">R$ 0,00</td></tr>
+            <tr class="sub"><td>Parcela 2 · Repasse Equatorial (tarifa mínima, encargos e consumo não compensado — quitada pela G3)</td><td id="pEq">R$ 0,00</td></tr>
           </table>
+          <div class="g3total"><span class="tlbl">TOTAL A PAGAR</span><span class="venc">Vencimento <b id="pVenc2">—</b></span><b class="val" id="pTotal">R$ 0,00</b></div>
 
-          <div class="boleto-lbl">Pagamento · Boleto Sicoob</div>
-          <div class="linhadig" id="pLinha" style="display:none"></div>
-          <div class="boleto-frame" id="bolFrame" style="height:230px">
-            <img id="bolImg" style="display:none" alt="">
-            <div class="empty" id="bolEmpty">Envie o boleto Sicoob no painel ao lado</div>
+                    <div class="boleto-box">
+            <div class="boleto-lbl">Pagamento · Boleto Sicoob</div>
+            <div class="linhadig" id="pLinha" style="display:none"></div>
+            <div class="boleto-frame" id="bolFrame" style="height:230px">
+              <img id="bolImg" style="display:none" alt="">
+              <div class="empty" id="bolEmpty">Envie o boleto Sicoob no painel ao lado</div>
+            </div>
           </div>
         </div>
       </div>
@@ -462,8 +491,8 @@ $('fileFat').addEventListener('change', async e=>{
 $('btnExtract').addEventListener('click', async ()=>{
   const st = $('stExtract');
   const PROMPT = `Extraia desta fatura da Equatorial Goiás e responda SOMENTE com JSON puro, sem markdown, sem texto extra, neste formato:
-{"cliente":"","unidade_consumidora":"","mes_referencia":"MM/AAAA","energia_compensada_kwh":0,"valor_total_equatorial":0,"vencimento":"DD/MM/AAAA"}
-Regras: energia_compensada_kwh é a energia injetada/compensada via SCEE (linha "Energia Atv Inj." ou "Energia compensada" ou similar, em kWh, some se houver mais de uma). valor_total_equatorial é o valor total a pagar da fatura. Números com ponto decimal. Se um campo não existir, use "" ou 0.`;
+{"cliente":"","unidade_consumidora":"","mes_referencia":"MM/AAAA","energia_compensada_kwh":0,"tarifa_kwh":0,"valor_total_equatorial":0,"vencimento":"DD/MM/AAAA"}
+Regras: energia_compensada_kwh é a energia injetada/compensada via SCEE (linha "Energia Atv Inj." ou "Energia compensada" ou similar, em kWh, some se houver mais de uma). tarifa_kwh é o valor da coluna "Preço unit (R$) com tributos" na linha "CONSUMO NÃO COMPENSADO", com todas as casas decimais que aparecerem (ex.: 1.185396); se essa linha não existir na fatura, use 0. valor_total_equatorial é o valor total a pagar da fatura. Números com ponto decimal. Se um campo não existir, use "" ou 0.`;
 
   async function ask(block){
     const resp = await fetch("/api/ler-fatura",{
@@ -502,6 +531,8 @@ Regras: energia_compensada_kwh é a energia injetada/compensada via SCEE (linha 
     if(j.unidade_consumidora) $('fUC').value = j.unidade_consumidora;
     if(j.mes_referencia) $('fMes').value = j.mes_referencia;
     if(j.energia_compensada_kwh) $('fKwh').value = j.energia_compensada_kwh;
+    if(j.tarifa_kwh && j.tarifa_kwh>0){ $('fTarifa').value = j.tarifa_kwh; $('tarifaWarn').style.display='none'; }
+    else { $('fTarifa').value=''; $('tarifaWarn').style.display='block'; }
     if(j.valor_total_equatorial) $('fEq').value = j.valor_total_equatorial;
     if(j.vencimento) $('fVenc').value = j.vencimento;
     st.className='status show done';
@@ -566,13 +597,17 @@ function recalc(){
   $('pNum').textContent = $('fNum').value||'—';
   $('pVenc').textContent = $('fVenc').value||'—';
   $('pKwh').textContent = kwh.toLocaleString('pt-BR')+' kWh';
-  $('pTarifa').textContent = 'R$ '+tar.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  $('pTarifa').textContent = 'R$ '+tar.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:6});
   $('pBruto').textContent = BRL(bruto);
   $('pDescPct').textContent = pct;
   $('pDescV').textContent = '− '+BRL(desc);
   $('pG3').textContent = BRL(g3);
   $('pEq').textContent = BRL(eq);
   $('pTotal').textContent = BRL(total);
+  $('hKwh').textContent = kwh.toLocaleString('pt-BR')+' kWh';
+  $('hEcon').textContent = BRL(desc);
+  $('hTot').textContent = BRL(total);
+  $('pVenc2').textContent = $('fVenc').value||'—';
 
   const linha = $('fLinha').value.trim();
   $('pLinha').style.display = linha ? 'block':'none';
@@ -604,6 +639,7 @@ $('slTarjaH').addEventListener('input', fitFatura);
 $('slBolTop').addEventListener('input', fitBoleto);
 $('slBolBot').addEventListener('input', fitBoleto);
 $('swTarja').addEventListener('change', ()=>{ $('tarja').style.display = $('swTarja').checked && $('fatImg').style.display!=='none' ? 'flex':'none'; });
+$('btnAutoBol').addEventListener('click', ()=>{ $('slBolTop').value = 78; $('slBolBot').value = 5; fitBoleto(); });
 $('bolImg').addEventListener('load', fitBoleto);
 window.addEventListener('resize', fitBoleto);
 
