@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>G3 Solar · Fatura Unificada</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root{
+    --navy:#14213D; --navy2:#1C2C4E; --cream:#F6F2EA; --orange:#E8843C; --gold:#F4A65A; --gray:#8F939D;
+    --line:#E4DFD4; --line2:#D8D2C6;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Barlow',sans-serif; background:var(--cream); color:var(--navy); min-height:100vh;}
+  a{color:var(--orange);} a:hover{color:#d4732e;}
+
+  /* ===== TOPO + STEPPER ===== */
+  .topbar{background:var(--navy); color:var(--cream); padding:0 32px; display:flex; align-items:stretch; gap:28px; flex-wrap:wrap; min-height:64px;}
+  .brand{display:flex; align-items:center; gap:14px; padding:12px 0;}
+  .brand .logo{font-family:'Barlow Semi Condensed'; font-weight:700; font-size:23px; letter-spacing:.04em; white-space:nowrap;}
+  .brand .logo span{color:var(--orange);}
+  .brand .appname{font-size:12px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--gray); border-left:1px solid rgba(246,242,234,.2); padding-left:14px; white-space:nowrap;}
+  .stepper{display:flex; align-items:center; gap:0; margin-left:auto;}
+  .stepper button{display:flex; align-items:center; gap:11px; font-family:'Barlow'; background:transparent; border:none; cursor:pointer; padding:0 18px; height:100%; min-height:64px; color:var(--gray); transition:.15s; border-bottom:3px solid transparent; border-top:3px solid transparent;}
+  .stepper button i{font-style:normal; font-family:'Barlow Semi Condensed'; font-weight:700; font-size:14px; width:28px; height:28px; border-radius:50%; border:1.5px solid var(--gray); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:.15s;}
+  .stepper button span{display:flex; flex-direction:column; align-items:flex-start; line-height:1.25; text-align:left;}
+  .stepper button span small{font-size:10.5px; font-weight:600; letter-spacing:.12em; text-transform:uppercase;}
+  .stepper button span b{font-family:'Barlow Semi Condensed'; font-size:15.5px; font-weight:600; letter-spacing:.02em;}
+  .stepper button.on{color:var(--cream); border-bottom-color:var(--orange);}
+  .stepper button.on i{background:var(--orange); border-color:var(--orange); color:#fff;}
+  .stepper button.on span small{color:var(--gold);}
+  .stepper button:not(.on):hover{color:var(--cream);}
+  .step-arrow{color:rgba(246,242,234,.25); font-size:18px; user-select:none;}
+  @media(max-width:760px){.stepper{margin-left:0; width:100%;} .stepper button{flex:1; min-height:54px;}}
+
+  .stage{display:none;}
+  .stage.on{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+
+  /* ===== CARDS / CAMPOS ===== */
+  .card{background:#fff; border:1px solid var(--line); border-radius:12px; padding:24px 26px; box-shadow:0 1px 3px rgba(20,33,61,.04);}
+  .card h3{font-family:'Barlow Semi Condensed'; font-size:13px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--navy); margin-bottom:14px; display:flex; align-items:center; gap:10px;}
+  .card h3 .n{width:22px; height:22px; border-radius:50%; background:var(--orange); color:#fff; font-size:12px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; letter-spacing:0;}
+  .card h3::after{content:""; flex:1; height:1px; background:var(--line);}
+
+  .drop{border:1.5px dashed var(--line2); border-radius:10px; padding:22px 16px; text-align:center; cursor:pointer; transition:.15s; font-size:13.5px; color:var(--gray); background:var(--cream); display:block; line-height:1.5;}
+  .drop::before{content:""; display:block; width:34px; height:34px; margin:0 auto 8px; opacity:.75;
+    background:center/contain no-repeat url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%238F939D" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>');}
+  .drop:hover{border-color:var(--orange); color:var(--navy); background:#fff;}
+  .drop.ok{border-style:solid; border-color:var(--navy); color:var(--navy); background:#fff; font-weight:600;}
+  .drop.ok::before{background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%2314213D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/></svg>');}
+  .drop input{display:none;}
+
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; border:none; cursor:pointer; font-family:'Barlow'; font-weight:700; font-size:14px; letter-spacing:.02em; border-radius:8px; padding:13px 18px; transition:.15s; width:100%;}
+  .btn-orange{background:var(--orange); color:#fff; box-shadow:0 2px 6px rgba(232,132,60,.3);}
+  .btn-orange:hover{background:#d4732e;}
+  .btn-navy{background:var(--navy); color:var(--cream);}
+  .btn-navy:hover{background:var(--navy2);}
+  .btn:disabled{opacity:.4; cursor:not-allowed; box-shadow:none;}
+  .btn:active:not(:disabled){transform:translateY(1px);}
+
+  .field{margin-bottom:11px;}
+  .field label{display:block; font-size:11.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--gray); margin-bottom:4px;}
+  .field input{width:100%; border:1px solid var(--line2); border-radius:7px; padding:10px 11px; font-family:'Barlow'; font-size:14.5px; color:var(--navy); background:#fff; transition:border-color .15s;}
+  .field input::placeholder{color:#BFBAAE;}
+  .field input:hover{border-color:#C0B9A9;}
+  .field input:focus{outline:2px solid var(--gold); outline-offset:-1px; border-color:var(--gold);}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:11px;}
+  .hint{font-size:12.5px; color:var(--gray); margin-top:10px; line-height:1.5;}
+  .status{font-size:12.5px; margin-top:10px; padding:9px 12px; border-radius:7px; display:none; line-height:1.45; font-weight:500;}
+  .status.show{display:flex; align-items:flex-start; gap:8px;}
+  .status.load{background:#FBEFE1; color:#8a4d18;}
+  .status.load::before{content:""; width:13px; height:13px; margin-top:2px; flex-shrink:0; border-radius:50%; border:2px solid var(--gold); border-top-color:transparent; animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .status.err{background:#F0EBE0; color:var(--navy2); border:1px solid var(--line2);}
+  .status.done{background:#EAF2EC; color:#1d5c2e;}
+
+  /* ===== ETAPA 1 ===== */
+  .e1{max-width:1080px; margin:0 auto; padding:32px 24px 80px; display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start;}
+  @media(max-width:900px){.e1{grid-template-columns:1fr;}}
+
+  .calcbox{background:var(--navy2); color:var(--cream); border-radius:10px; padding:16px 18px;}
+  .calcbox .row{display:flex; justify-content:space-between; font-size:13.5px; padding:4.5px 0;}
+  .calcbox .row span:last-child{font-variant-numeric:tabular-nums; font-weight:600;}
+  .calcbox .row.dim{color:var(--gray);}
+  .calcbox .row.desc{color:var(--gold);}
+
+  .bigresult{background:var(--navy); border-radius:10px; padding:24px 22px; margin-top:14px; color:var(--cream); text-align:center; border-top:3px solid var(--orange);}
+  .bigresult .lbl{font-family:'Barlow Semi Condensed'; font-size:12px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); margin-bottom:8px;}
+  .bigresult .val{font-family:'Barlow Semi Condensed'; font-weight:700; font-size:46px; color:var(--orange); line-height:1.05; font-variant-numeric:tabular-nums;}
+  .bigresult .venc{font-size:14px; margin-top:8px; color:var(--cream);}
+  .bigresult .obs{font-size:12px; color:var(--gray); margin-top:12px; line-height:1.55; border-top:1px solid rgba(246,242,234,.12); padding-top:10px;}
+
+  /* ===== ETAPA 2 ===== */
+  .wrap{display:grid; grid-template-columns:390px 1fr; min-height:calc(100vh - 64px);}
+  @media(max-width:980px){.wrap{grid-template-columns:1fr;}}
+  .panel{background:#fff; border-right:1px solid var(--line); padding:26px 26px 70px; overflow-y:auto; display:flex; flex-direction:column; gap:26px;}
+  .panel .card{border:none; padding:0; border-radius:0; box-shadow:none;}
+  .slider-row{display:flex; align-items:center; gap:10px; margin-bottom:9px;}
+  .slider-row label{font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--gray); width:112px; flex-shrink:0;}
+  .slider-row input[type=range]{flex:1; accent-color:var(--orange); height:18px;}
+  .switch-row{display:flex; align-items:center; gap:9px; margin:2px 0 12px; font-size:13.5px; font-weight:500;}
+  .switch-row input{accent-color:var(--orange); width:17px; height:17px; flex-shrink:0;}
+  .pagebtns{display:flex; gap:8px; margin-top:8px;}
+  .pagebtns button{flex:1; padding:7px; font-size:12px; border:1px solid var(--line2); background:#fff; border-radius:6px; cursor:pointer; font-family:'Barlow'; font-weight:600; color:var(--navy); transition:.15s;}
+  .pagebtns button:hover{background:var(--cream); border-color:var(--gray);}
+  .resumo2{background:var(--cream); border:1px solid var(--line); border-radius:10px; padding:14px 16px; font-size:13px;}
+  .resumo2 .row{display:flex; justify-content:space-between; gap:10px; padding:2.5px 0;}
+  .resumo2 .row:first-child{font-weight:700; font-family:'Barlow Semi Condensed'; font-size:14.5px; padding-bottom:6px;}
+  .resumo2 .row b{font-variant-numeric:tabular-nums;}
+  .resumo2 .row.tot{border-top:1px solid var(--line); margin-top:7px; padding-top:9px; font-family:'Barlow Semi Condensed'; font-weight:700; font-size:16.5px;}
+  .resumo2 .row.tot b{color:var(--orange); font-size:19px;}
+
+  .preview{padding:30px 28px; display:flex; flex-direction:column; align-items:center; gap:16px; background:#EAE5DA; overflow-y:auto;}
+  .preview .toolbar{display:flex; align-items:center; gap:12px; width:100%; max-width:794px;}
+  .preview .toolbar .btn{width:auto; padding:12px 26px;}
+  .preview .toolbar .tip{font-size:12.5px; color:var(--gray); line-height:1.4;}
+
+  /* ===== FOLHA A4 (aprovada — não alterar) ===== */
+  .a4{width:794px; min-height:1122px; background:#fff; box-shadow:0 4px 26px rgba(20,33,61,.18); position:relative; display:flex; flex-direction:column; overflow:hidden;}
+  .a4-top{position:relative; flex:0 0 auto; padding:14px 18px 8px; display:flex; flex-direction:column; align-items:center;}
+  .a4-top .lbl{align-self:flex-start; font-family:'Barlow Semi Condensed'; font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--gray); margin-bottom:5px;}
+  .fatura-frame{position:relative; width:100%; overflow:hidden; background:#fafafa; border:1px solid #eee;}
+  .fatura-frame img{width:100%; display:block;}
+  .tarja{position:absolute; left:0; right:0; background:rgba(20,33,61,.96); color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px 10px; text-align:center;}
+  .tarja b{font-family:'Barlow Semi Condensed'; font-size:16px; font-weight:700; letter-spacing:.08em; color:var(--gold);}
+  .tarja span{font-size:10.5px; font-weight:500; letter-spacing:.03em; color:var(--cream); margin-top:2px;}
+  .a4-cut{display:flex; align-items:center; gap:10px; padding:4px 18px; color:var(--gray); font-size:10px;}
+  .a4-cut .line{flex:1; border-top:1.5px dashed #C9C3B6;}
+  .a4-bottom{flex:1; display:flex; flex-direction:column; padding:0 18px 14px;}
+  .g3head{background:var(--navy); color:var(--cream); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-radius:4px 4px 0 0;}
+  .g3head .mark{font-family:'Barlow Semi Condensed'; font-weight:700; font-size:21px; letter-spacing:.04em;}
+  .g3head .mark span{color:var(--orange);}
+  .g3head .meta{text-align:right; font-size:9.5px; line-height:1.5; color:#c8cbd4;}
+  .g3info{display:flex; justify-content:space-between; background:var(--cream); padding:8px 16px; font-size:11.5px; border:1px solid #E4DFD4; border-top:none;}
+  .g3info div b{display:block; font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--gray); font-weight:600;}
+  .demtab{width:100%; border-collapse:collapse; font-size:11.5px; border:1px solid #E4DFD4; border-top:none;}
+  .demtab td{padding:5px 16px; border-bottom:1px solid #EFEBE1;}
+  .demtab td:last-child{text-align:right; font-weight:600; font-variant-numeric:tabular-nums;}
+  .demtab tr.dim td{color:var(--gray); font-weight:400;}
+  .demtab tr.desc td{color:#1d5c2e;}
+  .demtab tr.tot td{background:var(--navy); color:var(--cream); font-family:'Barlow Semi Condensed'; font-weight:700; font-size:16px; padding:9px 16px; border:none;}
+  .demtab tr.tot td:last-child{color:var(--orange); font-size:18px;}
+  .boleto-lbl{font-family:'Barlow Semi Condensed'; font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--gray); margin:10px 0 4px;}
+  .linhadig{font-family:'Courier New',monospace; font-size:13px; font-weight:700; letter-spacing:.02em; color:var(--navy); background:var(--cream); border:1px solid #E4DFD4; padding:6px 10px; margin-bottom:6px; text-align:center;}
+  .boleto-frame{position:relative; width:100%; overflow:hidden; border:1px solid #eee; background:#fafafa;}
+  .boleto-frame img{width:100%; display:block; position:relative;}
+  .a4 .empty{color:var(--gray); font-size:13px; text-align:center; padding:40px 0;}
+
+  /* ===== IMPRESSÃO ===== */
+  @media print{
+    @page{size:A4; margin:0;}
+    body{background:#fff;}
+    .topbar,.panel,.preview .toolbar,#stage1{display:none !important;}
+    #stage2{display:block !important;}
+    .wrap{display:block; min-height:0;}
+    .preview{padding:0; background:#fff; display:block;}
+    .a4{width:210mm; min-height:297mm; box-shadow:none; margin:0;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="logo">G3 <span>SOLAR</span></div>
+    <div class="appname">Fatura unificada</div>
+  </div>
+  <div class="stepper">
+    <button id="tab1" class="on" onclick="go(1)"><i>1</i><span><small>Etapa 1</small><b>Cálculo do boleto</b></span></button>
+    <div class="step-arrow">›</div>
+    <button id="tab2" onclick="go(2)"><i>2</i><span><small>Etapa 2</small><b>Fatura unificada</b></span></button>
+  </div>
+</div>
+
+<!-- ============================================================= -->
+<!-- ETAPA 1 — LER FATURA E CALCULAR O BOLETO A GERAR NO SICOOB     -->
+<!-- ============================================================= -->
+<div class="stage on" id="stage1">
+  <div class="e1">
+
+    <div>
+      <div class="card">
+        <h3><span class="n">1</span>Fatura Equatorial</h3>
+        <label class="drop" id="dropFat">
+          <span id="dropFatTxt">Clique para enviar o PDF (ou imagem) da fatura</span>
+          <input type="file" id="fileFat" accept="application/pdf,image/*">
+        </label>
+        <button class="btn btn-orange" id="btnExtract" style="margin-top:12px" disabled>Ler fatura com IA</button>
+        <div class="status" id="stExtract"></div>
+        <div class="hint">A leitura preenche os campos ao lado. Confira sempre kWh compensado e valor total.</div>
+      </div>
+
+      <div class="card" style="margin-top:20px">
+        <h3><span class="n">3</span>Memória de cálculo</h3>
+        <div class="calcbox">
+          <div class="row dim"><span>Energia compensada</span><span id="cKwh">— kWh</span></div>
+          <div class="row"><span>Valor sem desconto</span><span id="cBruto">R$ 0,00</span></div>
+          <div class="row desc"><span>Desconto G3</span><span id="cDescV">− R$ 0,00</span></div>
+          <div class="row"><span>Energia G3 Solar</span><span id="cG3">R$ 0,00</span></div>
+          <div class="row"><span>Repasse Equatorial</span><span id="cEq">R$ 0,00</span></div>
+        </div>
+        <div class="bigresult">
+          <div class="lbl">Gerar boleto no Sicoob no valor de</div>
+          <div class="val" id="cTotal">R$ 0,00</div>
+          <div class="venc">Vencimento: <b id="cVenc">—</b></div>
+          <div class="obs">Gere o boleto no app/internet banking do Sicoob com este valor e vencimento, salve o PDF e siga para a Etapa 2.</div>
+        </div>
+        <button class="btn btn-navy" style="margin-top:14px" onclick="go(2)">Boleto gerado → ir para a Etapa 2</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="n">2</span>Dados da cobrança</h3>
+      <div class="field"><label>Cliente</label><input id="fCliente" placeholder="Razão social / nome"></div>
+      <div class="grid2">
+        <div class="field"><label>Unidade consumidora</label><input id="fUC" placeholder="Nº UC"></div>
+        <div class="field"><label>Mês de referência</label><input id="fMes" placeholder="ex.: 07/2026"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Energia compensada (kWh)</label><input id="fKwh" type="number" step="1" placeholder="0"></div>
+        <div class="field"><label>Tarifa (R$/kWh)</label><input id="fTarifa" type="number" step="0.01" value="1.19"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Desconto (%)</label><input id="fDesc" type="number" step="1" value="20"></div>
+        <div class="field"><label>Fatura Equatorial (R$)</label><input id="fEq" type="number" step="0.01" placeholder="0,00"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Vencimento</label><input id="fVenc" placeholder="dd/mm/aaaa"></div>
+        <div class="field"><label>Nº da fatura G3</label><input id="fNum" placeholder="ex.: 2026-0001"></div>
+      </div>
+      <div class="hint">Os dados ficam salvos neste navegador — pode fechar, gerar o boleto no banco e voltar depois direto na Etapa 2.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================= -->
+<!-- ETAPA 2 — UNIFICAR BOLETO + FATURA NO A4                       -->
+<!-- ============================================================= -->
+<div class="stage" id="stage2">
+  <div class="wrap">
+    <div class="panel">
+
+      <div class="card">
+        <h3>Resumo da cobrança</h3>
+        <div class="resumo2">
+          <div class="row"><span id="r2Cliente">—</span></div>
+          <div class="row"><span>Referência</span><b id="r2Mes">—</b></div>
+          <div class="row"><span>Energia G3</span><b id="r2G3">R$ 0,00</b></div>
+          <div class="row"><span>Repasse Equatorial</span><b id="r2Eq">R$ 0,00</b></div>
+          <div class="row tot"><span>Boleto</span><b id="r2Total">R$ 0,00</b></div>
+        </div>
+        <div class="hint">Valores vindos da Etapa 1. Pra corrigir algo, volte na Etapa 1.</div>
+      </div>
+
+      <div class="card">
+        <h3>Boleto Sicoob</h3>
+        <label class="drop" id="dropBol">
+          <span id="dropBolTxt">Clique para enviar o PDF (ou imagem) do boleto gerado no banco</span>
+          <input type="file" id="fileBol" accept="application/pdf,image/*">
+        </label>
+        <div class="pagebtns" id="bolPages" style="display:none">
+          <button id="bolPrev">← Pág. anterior</button>
+          <button id="bolNext">Próx. página →</button>
+        </div>
+        <div class="field" style="margin-top:12px"><label>Linha digitável (opcional)</label><input id="fLinha" placeholder="00000.00000 00000.000000 ..."></div>
+      </div>
+
+      <div class="card">
+        <h3>Ajustes finos</h3>
+        <div class="switch-row"><input type="checkbox" id="swTarja" checked><label for="swTarja">Tarja sobre o código de barras Equatorial</label></div>
+        <div class="slider-row"><label>Posição tarja</label><input type="range" id="slTarjaPos" min="0" max="92" value="80"></div>
+        <div class="slider-row"><label>Altura tarja</label><input type="range" id="slTarjaH" min="6" max="30" value="12"></div>
+        <div class="slider-row"><label>Altura fatura</label><input type="range" id="slFatH" min="30" max="60" value="46"></div>
+        <div class="slider-row"><label>Corte topo boleto</label><input type="range" id="slBolTop" min="0" max="80" value="0"></div>
+        <div class="slider-row"><label>Corte base boleto</label><input type="range" id="slBolBot" min="0" max="80" value="0"></div>
+        <div class="hint">Use os cortes para mostrar só a ficha de compensação do boleto — o código de barras fica maior e escaneável.</div>
+      </div>
+
+    </div>
+
+    <div class="preview">
+      <div class="toolbar">
+        <button class="btn btn-navy" onclick="window.print()">Imprimir / Salvar PDF</button>
+        <div class="tip">A folha abaixo sai exatamente assim no papel A4.</div>
+      </div>
+
+      <div class="a4" id="a4">
+        <div class="a4-top">
+          <div class="lbl">Demonstrativo · Fatura Equatorial Goiás (para conferência — não pagar)</div>
+          <div class="fatura-frame" id="fatFrame" style="height:520px">
+            <img id="fatImg" style="display:none" alt="">
+            <div class="empty" id="fatEmpty">A fatura Equatorial vem da Etapa 1</div>
+            <div class="tarja" id="tarja" style="top:80%; height:12%; display:none;">
+              <b>FATURA QUITADA PELA G3 SOLAR</b>
+              <span>Não utilize este código de barras — o pagamento é feito exclusivamente pelo boleto G3 abaixo</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="a4-cut"><div class="line"></div><span>✂ &nbsp;destaque aqui</span><div class="line"></div></div>
+
+        <div class="a4-bottom">
+          <div class="g3head">
+            <div class="mark">G3 <span>SOLAR</span></div>
+            <div class="meta">
+              Consórcio G3 Gestão de Energia Solar · CNPJ 66.714.022/0001-21<br>
+              Rua T-55, nº 930, Sala 910, Ed. Walk Bueno, Setor Bueno, Goiânia/GO
+            </div>
+          </div>
+          <div class="g3info">
+            <div><b>Cliente</b><span id="pCliente">—</span></div>
+            <div><b>UC</b><span id="pUC">—</span></div>
+            <div><b>Referência</b><span id="pMes">—</span></div>
+            <div><b>Fatura nº</b><span id="pNum">—</span></div>
+            <div><b>Vencimento</b><span id="pVenc">—</span></div>
+          </div>
+          <table class="demtab">
+            <tr class="dim"><td>Energia compensada no período (SCEE)</td><td id="pKwh">— kWh</td></tr>
+            <tr class="dim"><td>Tarifa de referência (R$/kWh)</td><td id="pTarifa">—</td></tr>
+            <tr><td>Energia — valor integral</td><td id="pBruto">R$ 0,00</td></tr>
+            <tr class="desc"><td>Desconto G3 Solar (<span id="pDescPct">20</span>% sobre o kWh compensado)</td><td id="pDescV">− R$ 0,00</td></tr>
+            <tr><td>Energia G3 Solar com desconto</td><td id="pG3">R$ 0,00</td></tr>
+            <tr><td>Fatura Equatorial (tarifa mínima, encargos e consumo não compensado — quitada pela G3)</td><td id="pEq">R$ 0,00</td></tr>
+            <tr class="tot"><td>TOTAL A PAGAR</td><td id="pTotal">R$ 0,00</td></tr>
+          </table>
+
+          <div class="boleto-lbl">Pagamento · Boleto Sicoob</div>
+          <div class="linhadig" id="pLinha" style="display:none"></div>
+          <div class="boleto-frame" id="bolFrame" style="height:230px">
+            <img id="bolImg" style="display:none" alt="">
+            <div class="empty" id="bolEmpty">Envie o boleto Sicoob no painel ao lado</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* pdf.js: worker via Blob local — o CDN é bloqueado dentro do Web Worker */
+let pdfReady = (async () => {
+  const urls = [
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
+    "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js"
+  ];
+  for (const u of urls) {
+    try {
+      const r = await fetch(u);
+      if (!r.ok) continue;
+      const code = await r.text();
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        URL.createObjectURL(new Blob([code], { type: "application/javascript" }));
+      return;
+    } catch (e) { /* tenta o próximo */ }
+  }
+  // último recurso: processa na thread principal (mais lento, mas funciona)
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+  pdfjsLib.disableWorker = true;
+})();
+
+const $ = id => document.getElementById(id);
+const BRL = v => (isFinite(v)?v:0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+
+let fatBase64 = null, fatIsPdf = false, fatMime = null;
+let bolPdf = null, bolPage = 1;
+
+/* ---------- navegação entre etapas ---------- */
+function go(n){
+  $('stage1').classList.toggle('on', n===1);
+  $('stage2').classList.toggle('on', n===2);
+  $('tab1').classList.toggle('on', n===1);
+  $('tab2').classList.toggle('on', n===2);
+  if(n===2){ recalc(); fitFatura(); fitBoleto(); }
+  window.scrollTo(0,0);
+}
+
+/* ---------- persistência (fecha e volta depois) ---------- */
+const FIELDS = ['fCliente','fUC','fMes','fKwh','fTarifa','fDesc','fEq','fVenc','fNum','fLinha'];
+async function saveState(){
+  try{
+    const s = {};
+    FIELDS.forEach(id=> s[id] = $(id).value);
+    await window.storage.set('g3fat:fields', JSON.stringify(s));
+    if($('fatImg').src && $('fatImg').style.display!=='none'){
+      await window.storage.set('g3fat:fatimg', $('fatImg').src);
+    }
+  }catch(e){ /* storage indisponível — segue sem salvar */ }
+}
+async function loadState(){
+  try{
+    const r = await window.storage.get('g3fat:fields');
+    if(r && r.value){
+      const s = JSON.parse(r.value);
+      FIELDS.forEach(id=>{ if(s[id]) $(id).value = s[id]; });
+    }
+  }catch(e){}
+  try{
+    const img = await window.storage.get('g3fat:fatimg');
+    if(img && img.value){
+      $('fatImg').src = img.value;
+      $('fatImg').style.display='block'; $('fatEmpty').style.display='none';
+      $('tarja').style.display = $('swTarja').checked ? 'flex':'none';
+      $('dropFatTxt').textContent = 'Fatura recuperada da sessão anterior — envie outra pra substituir';
+      $('dropFat').classList.add('ok');
+      fitFatura();
+    }
+  }catch(e){}
+  recalc();
+}
+
+/* ---------- helpers ---------- */
+async function fileToBase64(file){
+  return new Promise((res,rej)=>{
+    const r = new FileReader();
+    r.onload = ()=>res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+async function renderPdfPage(b64, pageNum, jpeg){
+  await pdfReady;
+  const pdf = await pdfjsLib.getDocument({data: atob(b64)}).promise;
+  const page = await pdf.getPage(Math.min(pageNum, pdf.numPages));
+  const vp = page.getViewport({scale: 2});
+  const c = document.createElement('canvas');
+  c.width = vp.width; c.height = vp.height;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,c.width,c.height);
+  await page.render({canvasContext: ctx, viewport: vp}).promise;
+  return {dataUrl: jpeg ? c.toDataURL('image/jpeg',0.85) : c.toDataURL('image/png'), numPages: pdf.numPages};
+}
+
+/* ---------- etapa 1: fatura equatorial ---------- */
+$('fileFat').addEventListener('change', async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  $('dropFatTxt').textContent = f.name;
+  $('dropFat').classList.add('ok');
+  fatIsPdf = f.type === 'application/pdf';
+  fatMime = f.type;
+  fatBase64 = await fileToBase64(f);
+  $('btnExtract').disabled = false;
+  try {
+    let url;
+    if(fatIsPdf){ const r = await renderPdfPage(fatBase64,1,true); url = r.dataUrl; }
+    else { url = 'data:'+f.type+';base64,'+fatBase64; }
+    $('fatImg').src = url;
+    $('fatImg').style.display='block';
+    $('fatEmpty').style.display='none';
+    $('tarja').style.display = $('swTarja').checked ? 'flex':'none';
+    fitFatura();
+  } catch(err) {
+    $('fatEmpty').textContent = 'Não consegui exibir a prévia do PDF, mas a leitura com IA funciona normalmente.';
+  }
+  saveState();
+});
+
+/* leitura com IA */
+$('btnExtract').addEventListener('click', async ()=>{
+  const st = $('stExtract');
+  const PROMPT = `Extraia desta fatura da Equatorial Goiás e responda SOMENTE com JSON puro, sem markdown, sem texto extra, neste formato:
+{"cliente":"","unidade_consumidora":"","mes_referencia":"MM/AAAA","energia_compensada_kwh":0,"valor_total_equatorial":0,"vencimento":"DD/MM/AAAA"}
+Regras: energia_compensada_kwh é a energia injetada/compensada via SCEE (linha "Energia Atv Inj." ou "Energia compensada" ou similar, em kWh, some se houver mais de uma). valor_total_equatorial é o valor total a pagar da fatura. Números com ponto decimal. Se um campo não existir, use "" ou 0.`;
+
+  async function ask(block){
+    const resp = await fetch("/api/ler-fatura",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({model:"claude-sonnet-4-6", max_tokens:1000,
+        messages:[{role:"user", content:[block, {type:'text', text:PROMPT}]}]})
+    });
+    const data = await resp.json();
+    if(data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+    const txt = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    if(!txt) throw new Error('Resposta vazia da API');
+    return JSON.parse(txt.replace(/```json|```/g,'').trim());
+  }
+
+  st.className='status show load'; st.textContent='Lendo a fatura…';
+  let j = null, erro = '';
+
+  try{
+    j = fatIsPdf
+      ? await ask({type:'document', source:{type:'base64', media_type:'application/pdf', data:fatBase64}})
+      : await ask({type:'image', source:{type:'base64', media_type:fatMime||'image/png', data:fatBase64}});
+  }catch(e1){
+    erro = e1.message;
+    if(fatIsPdf){
+      try{
+        st.textContent='Tentando novamente como imagem…';
+        const r = await renderPdfPage(fatBase64,1,true);
+        j = await ask({type:'image', source:{type:'base64', media_type:'image/jpeg', data:r.dataUrl.split(',')[1]}});
+        erro = '';
+      }catch(e2){ erro = e2.message; }
+    }
+  }
+
+  if(j){
+    if(j.cliente) $('fCliente').value = j.cliente;
+    if(j.unidade_consumidora) $('fUC').value = j.unidade_consumidora;
+    if(j.mes_referencia) $('fMes').value = j.mes_referencia;
+    if(j.energia_compensada_kwh) $('fKwh').value = j.energia_compensada_kwh;
+    if(j.valor_total_equatorial) $('fEq').value = j.valor_total_equatorial;
+    if(j.vencimento) $('fVenc').value = j.vencimento;
+    st.className='status show done';
+    st.textContent='Fatura lida. Confira os campos — em especial kWh compensado e valor Equatorial.';
+    recalc(); saveState();
+  } else {
+    st.className='status show err';
+    st.textContent='Falha na leitura: '+erro+' — preencha os campos manualmente.';
+  }
+});
+
+/* ---------- etapa 2: boleto ---------- */
+$('fileBol').addEventListener('change', async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  $('dropBolTxt').textContent = f.name;
+  $('dropBol').classList.add('ok');
+  const b64 = await fileToBase64(f);
+  if(f.type==='application/pdf'){
+    bolPdf = b64; bolPage = 1;
+    const r = await renderPdfPage(b64,1);
+    $('bolImg').src = r.dataUrl;
+    $('bolPages').style.display = r.numPages>1 ? 'flex':'none';
+  } else {
+    bolPdf = null;
+    $('bolImg').src = 'data:'+f.type+';base64,'+b64;
+    $('bolPages').style.display='none';
+  }
+  $('bolImg').style.display='block'; $('bolEmpty').style.display='none';
+  fitBoleto();
+});
+$('bolPrev').addEventListener('click', async ()=>{ if(bolPdf && bolPage>1){bolPage--; const r=await renderPdfPage(bolPdf,bolPage); $('bolImg').src=r.dataUrl; fitBoleto();} });
+$('bolNext').addEventListener('click', async ()=>{ if(bolPdf){bolPage++; const r=await renderPdfPage(bolPdf,bolPage); $('bolImg').src=r.dataUrl; fitBoleto();} });
+
+/* ---------- cálculo ---------- */
+function recalc(){
+  const kwh = parseFloat($('fKwh').value)||0;
+  const tar = parseFloat($('fTarifa').value)||0;
+  const pct = parseFloat($('fDesc').value)||0;
+  const eq  = parseFloat($('fEq').value)||0;
+  const bruto = kwh*tar, desc = bruto*pct/100, g3 = bruto-desc, total = g3+eq;
+
+  /* etapa 1 */
+  $('cKwh').textContent = kwh.toLocaleString('pt-BR')+' kWh';
+  $('cBruto').textContent = BRL(bruto);
+  $('cDescV').textContent = '− '+BRL(desc);
+  $('cG3').textContent = BRL(g3);
+  $('cEq').textContent = BRL(eq);
+  $('cTotal').textContent = BRL(total);
+  $('cVenc').textContent = $('fVenc').value||'—';
+
+  /* etapa 2 — resumo lateral */
+  $('r2Cliente').textContent = $('fCliente').value||'—';
+  $('r2Mes').textContent = $('fMes').value||'—';
+  $('r2G3').textContent = BRL(g3);
+  $('r2Eq').textContent = BRL(eq);
+  $('r2Total').textContent = BRL(total);
+
+  /* etapa 2 — folha A4 */
+  $('pCliente').textContent = $('fCliente').value||'—';
+  $('pUC').textContent = $('fUC').value||'—';
+  $('pMes').textContent = $('fMes').value||'—';
+  $('pNum').textContent = $('fNum').value||'—';
+  $('pVenc').textContent = $('fVenc').value||'—';
+  $('pKwh').textContent = kwh.toLocaleString('pt-BR')+' kWh';
+  $('pTarifa').textContent = 'R$ '+tar.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  $('pBruto').textContent = BRL(bruto);
+  $('pDescPct').textContent = pct;
+  $('pDescV').textContent = '− '+BRL(desc);
+  $('pG3').textContent = BRL(g3);
+  $('pEq').textContent = BRL(eq);
+  $('pTotal').textContent = BRL(total);
+
+  const linha = $('fLinha').value.trim();
+  $('pLinha').style.display = linha ? 'block':'none';
+  $('pLinha').textContent = linha;
+}
+FIELDS.forEach(id=>$(id).addEventListener('input', ()=>{ recalc(); saveState(); }));
+
+/* ---------- ajustes visuais ---------- */
+function fitFatura(){
+  const h = parseInt($('slFatH').value);
+  $('fatFrame').style.height = Math.round(1122*h/100)+'px';
+  $('fatImg').style.width='100%';
+  $('tarja').style.top = $('slTarjaPos').value+'%';
+  $('tarja').style.height = $('slTarjaH').value+'%';
+}
+function fitBoleto(){
+  const top = parseInt($('slBolTop').value), bot = parseInt($('slBolBot').value);
+  const img = $('bolImg'), frame = $('bolFrame');
+  if(!img.naturalWidth){ return; }
+  const visible = Math.max(100-top-bot, 10);
+  const frameW = frame.clientWidth || 758;
+  const fullH = img.naturalHeight * (frameW/img.naturalWidth);
+  frame.style.height = Math.round(fullH*visible/100)+'px';
+  img.style.marginTop = '-'+Math.round(fullH*top/100)+'px';
+}
+$('slFatH').addEventListener('input', fitFatura);
+$('slTarjaPos').addEventListener('input', fitFatura);
+$('slTarjaH').addEventListener('input', fitFatura);
+$('slBolTop').addEventListener('input', fitBoleto);
+$('slBolBot').addEventListener('input', fitBoleto);
+$('swTarja').addEventListener('change', ()=>{ $('tarja').style.display = $('swTarja').checked && $('fatImg').style.display!=='none' ? 'flex':'none'; });
+$('bolImg').addEventListener('load', fitBoleto);
+window.addEventListener('resize', fitBoleto);
+
+/* ---------- arrastar e soltar nos uploads (aprimoramento de UI) ---------- */
+[['dropFat','fileFat'],['dropBol','fileBol']].forEach(([dz,inp])=>{
+  const zone = $(dz);
+  zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.style.borderColor='var(--orange)'; zone.style.background='#fff'; });
+  zone.addEventListener('dragleave', ()=>{ zone.style.borderColor=''; zone.style.background=''; });
+  zone.addEventListener('drop', e=>{
+    e.preventDefault(); zone.style.borderColor=''; zone.style.background='';
+    if(e.dataTransfer.files.length){
+      $(inp).files = e.dataTransfer.files;
+      $(inp).dispatchEvent(new Event('change'));
+    }
+  });
+});
+
+loadState();
+</script>
+</body>
+</html>
