@@ -1,5 +1,10 @@
+export const config = {
+  api: { bodyParser: { sizeLimit: '25mb' } },
+  maxDuration: 60
+};
+
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: { message: 'Method not allowed' } });
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -10,9 +15,10 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify(req.body)
     });
-    const data = await r.json();
-    return res.status(r.status).json(data);
+    const text = await r.text();
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(r.status).send(text);
   } catch (e) {
-    return res.status(500).json({ error: { message: e.message } });
+    return res.status(500).json({ error: { message: String(e && e.message || e) } });
   }
 }
