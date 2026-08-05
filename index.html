@@ -492,7 +492,7 @@ $('btnExtract').addEventListener('click', async ()=>{
   const st = $('stExtract');
   const PROMPT = `Extraia desta fatura da Equatorial Goiás e responda SOMENTE com JSON puro, sem markdown, sem texto extra, neste formato:
 {"cliente":"","unidade_consumidora":"","mes_referencia":"MM/AAAA","energia_compensada_kwh":0,"tarifa_kwh":0,"valor_total_equatorial":0,"vencimento":"DD/MM/AAAA"}
-Regras: energia_compensada_kwh é a energia injetada/compensada via SCEE (linha "Energia Atv Inj." ou "Energia compensada" ou similar, em kWh, some se houver mais de uma). tarifa_kwh é o valor da coluna "Preço unit (R$) com tributos" na linha "CONSUMO NÃO COMPENSADO", com todas as casas decimais que aparecerem (ex.: 1.185396); se essa linha não existir na fatura, use 0. valor_total_equatorial é o valor total a pagar da fatura. Números com ponto decimal. Se um campo não existir, use "" ou 0.`;
+Regras: energia_compensada_kwh é a QUANTIDADE (coluna "Quant.", em kWh) da linha "CONSUMO SCEE" da tabela "Itens da Fatura" — não use linhas de injeção ("INJEÇÃO SCEE", "PARC INJET S/DESC"), apenas a linha CONSUMO SCEE; se houver mais de uma linha CONSUMO SCEE, some as quantidades. tarifa_kwh é o valor da coluna "Preço unit (R$) com tributos" na linha "CONSUMO NÃO COMPENSADO", com todas as casas decimais que aparecerem (ex.: 1.185396); se essa linha não existir na fatura, use 0. valor_total_equatorial é o valor total a pagar da fatura. Números com ponto decimal. Se um campo não existir, use "" ou 0.`;
 
   async function ask(block){
     const resp = await fetch("/api/ler-fatura",{
