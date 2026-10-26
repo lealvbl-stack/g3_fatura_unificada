@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Copiar código de pagamento · G3 Solar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#14213D; --navy2:#1C2C4E; --cream:#F6F2EA;
+    --orange:#E8843C; --gold:#F4A65A; --gray:#8F939D;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:'Barlow',system-ui,sans-serif;
+    background:var(--navy);
+    color:var(--cream);
+    display:flex;align-items:center;justify-content:center;
+    padding:24px 16px;
+    min-height:100dvh;
+  }
+  .card{width:100%;max-width:460px}
+
+  .marca{
+    font-family:'Barlow Semi Condensed',sans-serif;font-weight:700;
+    font-size:26px;letter-spacing:.04em;text-align:center;margin-bottom:4px;
+  }
+  .marca span{color:var(--orange)}
+  .sub{
+    text-align:center;font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--gray);margin-bottom:28px;
+  }
+
+  .painel{background:var(--cream);color:var(--navy);border-radius:14px;padding:22px 20px 24px}
+
+  .rotulo{
+    font-family:'Barlow Semi Condensed',sans-serif;font-size:11px;font-weight:700;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--gray);margin-bottom:8px;
+  }
+
+  .codigo{
+    font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    font-size:clamp(13px,4.2vw,17px);font-weight:600;line-height:1.7;
+    color:var(--navy);word-break:break-all;
+    background:#fff;border:1px solid #E4DFD4;border-radius:8px;
+    padding:14px 12px;text-align:center;
+    user-select:all;-webkit-user-select:all;
+  }
+
+  .btn{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    width:100%;margin-top:16px;border:0;cursor:pointer;
+    background:var(--orange);color:#fff;
+    font-family:'Barlow',sans-serif;font-weight:700;font-size:17px;
+    padding:17px;border-radius:9px;
+    transition:background .15s,transform .08s;
+  }
+  .btn:active{transform:scale(.985)}
+  .btn.ok{background:#1d5c2e}
+  .btn svg{width:19px;height:19px;flex:none}
+
+  .dados{display:flex;gap:10px;margin-top:16px}
+  .dado{flex:1;background:#fff;border:1px solid #E4DFD4;border-radius:8px;padding:11px 12px}
+  .dado b{display:block;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--gray);font-weight:600;margin-bottom:3px}
+  .dado span{font-family:'Barlow Semi Condensed',sans-serif;font-weight:700;font-size:19px;color:var(--navy)}
+  .dado.destaque span{color:var(--orange)}
+
+  .passos{margin-top:18px;font-size:13.5px;line-height:1.6;color:#5c6070}
+  .passos li{margin-left:17px;padding-left:3px}
+
+  .rodape{
+    margin-top:22px;text-align:center;font-size:11px;line-height:1.6;color:var(--gray);
+  }
+  .rodape strong{color:var(--cream);font-weight:600}
+
+  .erro{background:var(--cream);color:var(--navy);border-radius:14px;padding:26px 22px;text-align:center}
+  .erro h2{font-family:'Barlow Semi Condensed',sans-serif;font-size:20px;margin-bottom:8px}
+  .erro p{font-size:14px;line-height:1.6;color:#5c6070}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="marca">G3 <span>SOLAR</span></div>
+  <div class="sub">Energia solar por assinatura</div>
+  <div id="conteudo"></div>
+  <div class="rodape">
+    Beneficiário <strong>Consórcio G3 Gestão de Energia Solar</strong><br>
+    CNPJ 66.714.022/0001-21 · Dúvidas: <strong>62 3190-2020</strong>
+  </div>
+</div>
+
+<script>
+(function(){
+  var p = new URLSearchParams(location.search);
+  var bruto = (p.get('c') || p.get('linha') || '').replace(/\D/g,'');
+  var valor = p.get('v') || '';
+  var venc  = p.get('d') || '';
+  var alvo  = document.getElementById('conteudo');
+
+  if (bruto.length !== 47) {
+    alvo.innerHTML = '<div class="erro"><h2>Código não encontrado</h2>' +
+      '<p>O endereço não traz um código de pagamento válido. Abra o link direto do seu documento de cobrança ou fale com a gente pelo telefone abaixo.</p></div>';
+    return;
+  }
+
+  function formatar(d){
+    return d.slice(0,5)+'.'+d.slice(5,10)+' '+
+           d.slice(10,15)+'.'+d.slice(15,21)+' '+
+           d.slice(21,26)+'.'+d.slice(26,32)+' '+
+           d.slice(32,33)+' '+d.slice(33);
+  }
+  function moeda(s){
+    var n = parseFloat(String(s).replace(/\./g,'').replace(',','.'));
+    return isFinite(n) ? n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '';
+  }
+
+  var caixaDados = '';
+  var vFmt = valor ? moeda(valor) : '';
+  if (vFmt || venc) {
+    caixaDados = '<div class="dados">' +
+      (vFmt ? '<div class="dado destaque"><b>Valor</b><span>'+vFmt+'</span></div>' : '') +
+      (venc ? '<div class="dado"><b>Vencimento</b><span>'+venc+'</span></div>' : '') +
+      '</div>';
+  }
+
+  alvo.innerHTML =
+    '<div class="painel">' +
+      '<div class="rotulo">Código de barras do boleto</div>' +
+      '<div class="codigo" id="codigo">'+formatar(bruto)+'</div>' +
+      '<button class="btn" id="btn" type="button">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+        '<span id="btnTxt">Copiar código</span>' +
+      '</button>' +
+      caixaDados +
+      '<ol class="passos">' +
+        '<li>Toque em copiar código</li>' +
+        '<li>Abra o app do seu banco</li>' +
+        '<li>Escolha pagar com código de barras e cole</li>' +
+      '</ol>' +
+    '</div>';
+
+  var btn = document.getElementById('btn');
+  var txt = document.getElementById('btnTxt');
+
+  function sucesso(){
+    btn.classList.add('ok');
+    txt.textContent = 'Código copiado';
+    setTimeout(function(){ btn.classList.remove('ok'); txt.textContent='Copiar código'; }, 2600);
+  }
+  function manual(){
+    var el = document.getElementById('codigo');
+    var r = document.createRange(); r.selectNodeContents(el);
+    var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    txt.textContent = 'Toque e segure para copiar';
+    setTimeout(function(){ txt.textContent='Copiar código'; }, 3200);
+  }
+
+  btn.addEventListener('click', function(){
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(bruto).then(sucesso).catch(legado);
+    } else { legado(); }
+  });
+
+  function legado(){
+    try{
+      var ta = document.createElement('textarea');
+      ta.value = bruto;
+      ta.setAttribute('readonly','');
+      ta.style.cssText = 'position:absolute;left:-9999px;top:0';
+      document.body.appendChild(ta);
+      ta.select(); ta.setSelectionRange(0, 47);
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      ok ? sucesso() : manual();
+    }catch(e){ manual(); }
+  }
+})();
+</script>
+</body>
+</html>
